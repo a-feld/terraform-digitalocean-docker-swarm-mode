@@ -100,4 +100,5 @@ Worker nodes should be used to run the Docker Swarm mode Services. By default, 2
 ## License
 
 This repository is forked from [thojkooi/terraform-digitalocean-docker-swarm-mode](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-mode)
+
 [MIT © Thomas Kooi](LICENSE)
