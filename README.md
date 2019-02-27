@@ -1,8 +1,6 @@
 # Terraform DigitalOcean Docker Swarm mode
 
-Terraform module to provision a Docker Swarm mode cluster in a single availability zone on DigitalOcean, using a private network.
-
-[![CircleCI](https://circleci.com/gh/thojkooi/terraform-digitalocean-docker-swarm-mode.svg?style=svg)](https://circleci.com/gh/thojkooi/terraform-digitalocean-docker-swarm-mode)
+Terraform module to provision a Docker Swarm mode cluster in a single availability zone on DigitalOcean.
 
 - [Requirements](#requirements)
 - [Usage](#usage)
@@ -19,40 +17,16 @@ Terraform module to provision a Docker Swarm mode cluster in a single availabili
 ## Usage
 
 ```hcl
-module "swarm-cluster" {
-  source           = "thojkooi/docker-swarm-mode/digitalocean"
-  version          = "1.0.0"
-  domain           = "do.example.com"
-  total_managers   = 3
-  total_workers    = 2
-  manager_ssh_keys = [1234, 1235, ...]
-  worker_ssh_keys  = [1234, 1235, ...]
-
-  providers {}
-}
-```
-
-### SSH Key
-
-Terraform uses an SSH key to connect to the created droplets in order to issue `docker swarm join` commands. By default this uses `~/.ssh/id_rsa`. If you wish to use a different key, you can modify this using the variable `provision_ssh_key`. You also need to ensure the public key is added to your DigitalOcean account and it's listed in both the `manager_ssh_keys` and `worker_ssh_keys` lists.
-
-### Exposing the Docker API
-
-You can expose the Docker API to interact with the cluster remotely. This is done by providing a certificate and private key. See the [Docker TLS example](/examples/remote-api-tls/certs) for information on how to create these.
-
-```hcl
 module "swarm_mode_cluster" {
-  source           = "thojkooi/docker-swarm-mode/digitalocean"
-  version          = "1.0.0"
+  source           = "github.com/a-feld/terraform-digitalocean-docker-swarm-mode"
   domain           = "do.example.com"
   total_managers   = 3
   total_workers    = 2
-  manager_ssh_keys = [1234, 1235, ...]
-  worker_ssh_keys  = [1234, 1235, ...]
+  ssh_keys         = [1234, 1235, ...]
 
-  remote_api_ca          = "${path.module}/certs/ca.pem"
-  remote_api_certificate = "${path.module}/certs/server.pem"
-  remote_api_key         = "${path.module}/certs/server-key.pem"
+  remote_api_ca          = "${var.ca_cert}"
+  remote_api_certificate = "${var.server_cert}"
+  remote_api_key         = "${var.server_key}"
 
   manager_size = "s-2vcpu-4gb"
   worker_size  = "s-1vcpu-1gb"
@@ -62,21 +36,19 @@ module "swarm_mode_cluster" {
 }
 ```
 
+### SSH Key
+
+Terraform uses an SSH key to connect to the created droplets in order to issue `docker swarm join` commands. By default this uses `~/.ssh/id_rsa`.You also need to ensure the public key is added to your DigitalOcean account and it's listed in the `ssh_keys` list.
+
+### Exposing the Docker API
+
+You can expose the Docker API to interact with the cluster remotely. This is done by providing a certificate and private key. Creating these keys can be done using the [tls provider](https://www.terraform.io/docs/providers/tls/index.html). Instructions on creating the required certificates are available [here](https://coreos.com/os/docs/latest/generate-self-signed-certificates.html).
+
 > Note that for this to work, you need to open the Docker remote API port in both iptables (not necessary with default images) and the DigitalOcean cloud firewall.
-
-## Notes
-
-### Installing Docker
-
-It module does not install Docker - this is left up to the user of this module. The default image used comes with Docker CE pre-installed. It's encouraged to provide your own image or use configuration management tooling to install Docker.
-
-You can also install Docker using user data. See the [user-data example](#).
-
-This module has been tested with Docker CE v18.06 and later. Earlier versions should work (v1.13 and up), but have not been tested.
 
 ### Supported OS
 
-This module has been tested with Ubuntu Docker (`docker-18-04`), CoreOS, and CentOS 7.4 provided by DigitalOcean, but it should work with other distributions as well, as long as `Docker` and `sudo` packages are installed.
+This module will only work on CoreOS distributions provided by DigitalOcean.
 
 ### Ports & Firewall
 
@@ -101,11 +73,11 @@ ufw allow 4789/udp
 
 #### Cloud Firewall
 
-Also set up firewall rules on DigitalOcean for the cluster, to ensure only cluster members can access the internal Swarm ports. You can use the [digitalocean-docker-swarm-firewall](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-firewall) module for this. Look in the [firewall examples directory](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-mode/tree/master/examples/firewall) for inspiration on how to do this.
+Also set up firewall rules on DigitalOcean for the cluster, to ensure only cluster members can access the internal Swarm ports. You can use the [digitalocean-docker-swarm-firewall](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-firewall) module for this. Look in the [firewall examples directory](https://github.com/a-feld/terraform-digitalocean-docker-swarm-mode/tree/master/examples/firewall) for inspiration on how to do this.
 
 ## Examples
 
-For examples, see the [examples directory](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-mode/tree/master/examples).
+For examples, see the [examples directory](https://github.com/a-feld/terraform-digitalocean-docker-swarm-mode/tree/master/examples).
 
 ## Swarm mode set-up
 
@@ -127,4 +99,5 @@ Worker nodes should be used to run the Docker Swarm mode Services. By default, 2
 
 ## License
 
+This repository is forked from [thojkooi/terraform-digitalocean-docker-swarm-mode](https://github.com/thojkooi/terraform-digitalocean-docker-swarm-mode)
 [MIT © Thomas Kooi](LICENSE)
