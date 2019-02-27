@@ -1,42 +1,36 @@
-data "template_file" "join_cluster_as_worker" {
-  template = "${file("${path.module}/scripts/join.sh")}"
-
-  vars {
-    docker_cmd         = "${var.docker_cmd}"
-    availability       = "${var.availability}"
-    manager_private_ip = "${var.manager_private_ip}"
-  }
+# RNGD service is required to pump entropy into the kernel. If this isn't
+# done, dockerd will hang for 10-15 minutes on every boot
+data "ignition_systemd_unit" "rngd" {
+  name    = "rngd.service"
+  enabled = true
 }
 
-resource "digitalocean_droplet" "node" {
-  ssh_keys           = "${var.ssh_keys}"
-  image              = "${var.image}"
-  region             = "${var.region}"
-  size               = "${var.size}"
-  private_networking = true
-  backups            = "${var.backups}"
-  ipv6               = false
-  user_data          = "${var.user_data}"
-  tags               = ["${var.tags}"]
-  count              = "${var.total_instances}"
-  name               = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
+# Ignition config (with services on start)
+data "ignition_config" "config" {
+  systemd = [
+    "${data.ignition_systemd_unit.rngd.id}",
+  ]
+}
+
+resource "digitalocean_droplet" "worker" {
+  count     = "${var.total_instances}"
+  image     = "${var.image}"
+  name      = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
+  size      = "${var.size}"
+  region    = "${var.region}"
+  ssh_keys  = "${var.ssh_keys}"
+  user_data = "${data.ignition_config.config.rendered}"
+  tags      = []
 
   connection {
-    type        = "ssh"
-    user        = "${var.provision_user}"
-    private_key = "${file("${var.provision_ssh_key}")}"
-    timeout     = "${var.connection_timeout}"
-  }
-
-  provisioner "file" {
-    content     = "${data.template_file.join_cluster_as_worker.rendered}"
-    destination = "/tmp/join_cluster_as_worker.sh"
+    type    = "ssh"
+    user    = "core"
+    timeout = "${var.connection_timeout}"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /tmp/join_cluster_as_worker.sh",
-      "/tmp/join_cluster_as_worker.sh ${var.join_token}",
+      "docker swarm join --token ${var.join_token} ${var.manager_ip}",
     ]
   }
 
@@ -44,7 +38,7 @@ resource "digitalocean_droplet" "node" {
     when = "destroy"
 
     inline = [
-      "docker swarm leave",
+      "timeout 25 docker swarm leave --force",
     ]
 
     on_failure = "continue"
