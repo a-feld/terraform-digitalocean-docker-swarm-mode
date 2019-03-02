@@ -30,8 +30,8 @@ module "workers" {
   total_instances = "${var.total_workers}"
   tags            = "${var.worker_tags}"
 
-  manager_ip = "${element(module.managers.ipv4_addresses, 0)}"
-  join_token = "${module.managers.worker_token}"
+  manager_private_ip = "${element(module.managers.ipv4_addresses_private, 0)}"
+  join_token         = "${module.managers.worker_token}"
 
   ssh_keys           = "${var.ssh_keys}"
   connection_timeout = "${var.connection_timeout}"

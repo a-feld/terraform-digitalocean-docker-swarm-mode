@@ -11,7 +11,7 @@ variable "join_token" {
   description = "Join token for the nodes"
 }
 
-variable "manager_ip" {
+variable "manager_private_ip" {
   description = "Ip adress of a manager node, used to have a node join the existing cluster"
 }
 

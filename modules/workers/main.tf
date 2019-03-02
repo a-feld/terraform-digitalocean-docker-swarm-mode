@@ -13,14 +13,15 @@ data "ignition_config" "config" {
 }
 
 resource "digitalocean_droplet" "worker" {
-  count     = "${var.total_instances}"
-  image     = "${var.image}"
-  name      = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
-  size      = "${var.size}"
-  region    = "${var.region}"
-  ssh_keys  = "${var.ssh_keys}"
-  user_data = "${data.ignition_config.config.rendered}"
-  tags      = []
+  count              = "${var.total_instances}"
+  image              = "${var.image}"
+  name               = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
+  size               = "${var.size}"
+  private_networking = true
+  region             = "${var.region}"
+  ssh_keys           = "${var.ssh_keys}"
+  user_data          = "${data.ignition_config.config.rendered}"
+  tags               = ["${var.tags}"]
 
   connection {
     type    = "ssh"
@@ -30,7 +31,7 @@ resource "digitalocean_droplet" "worker" {
 
   provisioner "remote-exec" {
     inline = [
-      "docker swarm join --token ${var.join_token} ${var.manager_ip}",
+      "docker swarm join --token ${var.join_token} ${var.manager_private_ip}",
     ]
   }
 

@@ -83,14 +83,15 @@ data "ignition_config" "config" {
 }
 
 resource "digitalocean_droplet" "manager" {
-  count     = "${var.total_instances}"
-  image     = "${var.image}"
-  name      = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
-  size      = "${var.size}"
-  region    = "${var.region}"
-  ssh_keys  = "${var.ssh_keys}"
-  user_data = "${data.ignition_config.config.rendered}"
-  tags      = ["${var.tags}"]
+  count              = "${var.total_instances}"
+  image              = "${var.image}"
+  name               = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
+  size               = "${var.size}"
+  private_networking = true
+  region             = "${var.region}"
+  ssh_keys           = "${var.ssh_keys}"
+  user_data          = "${data.ignition_config.config.rendered}"
+  tags               = ["${var.tags}"]
 
   connection {
     type    = "ssh"
@@ -100,7 +101,7 @@ resource "digitalocean_droplet" "manager" {
 
   provisioner "remote-exec" {
     inline = [
-      "${count.index == 0 ? "docker swarm init --advertise-addr ${self.ipv4_address} &>/dev/null" : "true"}",
+      "${count.index == 0 ? "docker swarm init --advertise-addr ${self.ipv4_address_private} &>/dev/null" : "true"}",
     ]
   }
 
@@ -136,7 +137,7 @@ resource "null_resource" "join" {
 
   provisioner "remote-exec" {
     inline = [
-      "docker swarm join --token ${lookup(data.external.swarm_tokens.result, "manager")} ${digitalocean_droplet.manager.0.ipv4_address}",
+      "docker swarm join --token ${lookup(data.external.swarm_tokens.result, "manager")} ${digitalocean_droplet.manager.0.ipv4_address_private}",
     ]
   }
 }
