@@ -50,3 +50,9 @@ variable "tags" {
   default     = []
   type        = "list"
 }
+
+variable "systemd_units" {
+  description = "List of systemd units to install on machines"
+  default     = []
+  type        = "list"
+}

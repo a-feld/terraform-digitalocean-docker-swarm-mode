@@ -54,3 +54,9 @@ variable "remote_api_certificate" {
 variable "remote_api_key" {
   description = "Private key file path for the docker remote API"
 }
+
+variable "systemd_units" {
+  description = "List of systemd units to install on machines"
+  default     = []
+  type        = "list"
+}

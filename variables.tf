@@ -73,8 +73,20 @@ variable "manager_tags" {
   type        = "list"
 }
 
+variable "manager_systemd_units" {
+  description = "List of systemd units to install on manager machines"
+  default     = []
+  type        = "list"
+}
+
 variable "worker_tags" {
   description = "List of DigitalOcean tag ids"
+  default     = []
+  type        = "list"
+}
+
+variable "worker_systemd_units" {
+  description = "List of systemd units to install on worker machines"
   default     = []
   type        = "list"
 }
