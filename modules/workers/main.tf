@@ -19,14 +19,15 @@ resource "digitalocean_droplet" "worker" {
   size               = "${var.size}"
   private_networking = true
   region             = "${var.region}"
-  ssh_keys           = ["${var.ssh_keys}"]
+  ssh_keys           = "${var.ssh_keys}"
   user_data          = "${data.ignition_config.config.rendered}"
-  tags               = ["${var.tags}"]
+  tags               = "${var.tags}"
 
   connection {
     type    = "ssh"
     user    = "core"
     timeout = "${var.connection_timeout}"
+    host    = "${self.ipv4_address}"
   }
 
   provisioner "remote-exec" {
