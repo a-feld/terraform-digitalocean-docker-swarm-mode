@@ -89,7 +89,7 @@ resource "digitalocean_droplet" "manager" {
   size               = "${var.size}"
   private_networking = true
   region             = "${var.region}"
-  ssh_keys           = "${var.ssh_keys}"
+  ssh_keys           = ["${var.ssh_keys}"]
   user_data          = "${data.ignition_config.config.rendered}"
   tags               = ["${var.tags}"]
 
