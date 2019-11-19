@@ -1,30 +1,30 @@
 data "ignition_file" "ca_cert" {
   filesystem = "root"
   path       = "/etc/docker/ca.pem"
-  mode       = 0644
+  mode       = 420
 
   content {
-    content = "${var.remote_api_ca}"
+    content = var.remote_api_ca
   }
 }
 
 data "ignition_file" "server_cert" {
   filesystem = "root"
   path       = "/etc/docker/server.pem"
-  mode       = 0644
+  mode       = 420
 
   content {
-    content = "${var.remote_api_certificate}"
+    content = var.remote_api_certificate
   }
 }
 
 data "ignition_file" "server_key" {
   filesystem = "root"
   path       = "/etc/docker/server-key.pem"
-  mode       = 0644
+  mode       = 420
 
   content {
-    content = "${var.remote_api_key}"
+    content = var.remote_api_key
   }
 }
 
@@ -39,6 +39,7 @@ data "ignition_systemd_unit" "docker_tls" {
 [Service]
 Environment="DOCKER_OPTS=--tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem"
 EOF
+
   }
 }
 
@@ -58,6 +59,7 @@ Service=docker.service
 [Install]
 WantedBy=sockets.target
 EOF
+
 }
 
 # RNGD service is required to pump entropy into the kernel. If this isn't
@@ -69,80 +71,86 @@ data "ignition_systemd_unit" "rngd" {
 
 locals {
   systemd = [
-    "${data.ignition_systemd_unit.docker_tls.id}",
-    "${data.ignition_systemd_unit.docker_tls_socket.id}",
-    "${data.ignition_systemd_unit.rngd.id}",
+    data.ignition_systemd_unit.docker_tls.id,
+    data.ignition_systemd_unit.docker_tls_socket.id,
+    data.ignition_systemd_unit.rngd.id,
   ]
 }
 
 # Ignition config (with services on start)
 data "ignition_config" "config" {
-  systemd = "${concat(local.systemd, var.systemd_units)}"
+  systemd = concat(local.systemd, var.systemd_units)
 
   files = [
-    "${data.ignition_file.ca_cert.id}",
-    "${data.ignition_file.server_cert.id}",
-    "${data.ignition_file.server_key.id}",
+    data.ignition_file.ca_cert.id,
+    data.ignition_file.server_cert.id,
+    data.ignition_file.server_key.id,
   ]
 }
 
 resource "digitalocean_droplet" "manager" {
-  count              = "${var.total_instances}"
-  image              = "${var.image}"
-  name               = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
-  size               = "${var.size}"
+  count = var.total_instances
+  image = var.image
+  name = format(
+    "%s-%02d.%s.%s",
+    var.name,
+    count.index + 1,
+    var.region,
+    var.domain,
+  )
+  size               = var.size
   private_networking = true
-  region             = "${var.region}"
-  ssh_keys           = "${var.ssh_keys}"
-  user_data          = "${data.ignition_config.config.rendered}"
-  tags               = "${var.tags}"
+  region             = var.region
+  ssh_keys           = var.ssh_keys
+  user_data          = data.ignition_config.config.rendered
+  tags               = var.tags
 
   connection {
     type    = "ssh"
     user    = "core"
-    timeout = "${var.connection_timeout}"
-    host    = "${self.ipv4_address}"
+    timeout = var.connection_timeout
+    host    = self.ipv4_address
   }
 
   provisioner "remote-exec" {
     inline = [
-      "${count.index == 0 ? "docker swarm init --advertise-addr ${self.ipv4_address_private} &>/dev/null" : "true"}",
+      count.index == 0 ? "docker swarm init --advertise-addr ${self.ipv4_address_private} &>/dev/null" : "true",
     ]
   }
 
   provisioner "remote-exec" {
-    when = "destroy"
+    when = destroy
 
     inline = [
       "timeout 25 docker swarm leave --force",
     ]
 
-    on_failure = "continue"
+    on_failure = continue
   }
 }
 
 data "external" "swarm_tokens" {
   program    = ["bash", "${path.module}/scripts/get-swarm-join-tokens.sh"]
-  depends_on = ["digitalocean_droplet.manager"]
+  depends_on = [digitalocean_droplet.manager]
 
   query = {
-    host = "${element(digitalocean_droplet.manager.*.ipv4_address, 0)}"
+    host = element(digitalocean_droplet.manager.*.ipv4_address, 0)
     user = "core"
   }
 }
 
 resource "null_resource" "join" {
-  count = "${var.total_instances - 1}"
+  count = var.total_instances - 1
 
   connection {
-    host = "${element(digitalocean_droplet.manager.*.ipv4_address, count.index+1)}"
+    host = element(digitalocean_droplet.manager.*.ipv4_address, count.index + 1)
     type = "ssh"
     user = "core"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "docker swarm join --token ${lookup(data.external.swarm_tokens.result, "manager")} ${digitalocean_droplet.manager.0.ipv4_address_private}",
+      "docker swarm join --token ${data.external.swarm_tokens.result["manager"]} ${digitalocean_droplet.manager[0].ipv4_address_private}",
     ]
   }
 }
