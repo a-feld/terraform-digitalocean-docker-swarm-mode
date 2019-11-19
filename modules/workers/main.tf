@@ -6,30 +6,36 @@ data "ignition_systemd_unit" "rngd" {
 }
 
 locals {
-  systemd = ["${data.ignition_systemd_unit.rngd.id}"]
+  systemd = [data.ignition_systemd_unit.rngd.id]
 }
 
 # Ignition config (with services on start)
 data "ignition_config" "config" {
-  systemd = "${concat(local.systemd, var.systemd_units)}"
+  systemd = concat(local.systemd, var.systemd_units)
 }
 
 resource "digitalocean_droplet" "worker" {
-  count              = "${var.total_instances}"
-  image              = "${var.image}"
-  name               = "${format("%s-%02d.%s.%s", var.name, count.index + 1, var.region, var.domain)}"
-  size               = "${var.size}"
+  count = var.total_instances
+  image = var.image
+  name = format(
+    "%s-%02d.%s.%s",
+    var.name,
+    count.index + 1,
+    var.region,
+    var.domain,
+  )
+  size               = var.size
   private_networking = true
-  region             = "${var.region}"
-  ssh_keys           = "${var.ssh_keys}"
-  user_data          = "${data.ignition_config.config.rendered}"
-  tags               = "${var.tags}"
+  region             = var.region
+  ssh_keys           = var.ssh_keys
+  user_data          = data.ignition_config.config.rendered
+  tags               = var.tags
 
   connection {
     type    = "ssh"
     user    = "core"
-    timeout = "${var.connection_timeout}"
-    host    = "${self.ipv4_address}"
+    timeout = var.connection_timeout
+    host    = self.ipv4_address
   }
 
   provisioner "remote-exec" {
@@ -39,12 +45,12 @@ resource "digitalocean_droplet" "worker" {
   }
 
   provisioner "remote-exec" {
-    when = "destroy"
+    when = destroy
 
     inline = [
       "timeout 25 docker swarm leave --force",
     ]
 
-    on_failure = "continue"
+    on_failure = continue
   }
 }

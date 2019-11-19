@@ -16,7 +16,7 @@ variable "manager_private_ip" {
 }
 
 variable "ssh_keys" {
-  type        = "list"
+  type        = list
   description = "A list of SSH IDs or fingerprints to enable in the format [12345, 123456] that are added to manager nodes"
 }
 
@@ -48,11 +48,11 @@ variable "name" {
 variable "tags" {
   description = "List of DigitalOcean tag ids"
   default     = []
-  type        = "list"
+  type        = list
 }
 
 variable "systemd_units" {
   description = "List of systemd units to install on machines"
   default     = []
-  type        = "list"
+  type        = list
 }
