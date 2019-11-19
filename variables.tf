@@ -8,7 +8,7 @@ variable "domain" {
 }
 
 variable "ssh_keys" {
-  type        = "list"
+  type        = list
   description = "A list of SSH IDs or fingerprints to enable in the format [12345, 123456] that are added to the provisioned nodes"
 }
 
@@ -70,25 +70,25 @@ variable "worker_name" {
 variable "manager_tags" {
   description = "List of DigitalOcean tag ids"
   default     = []
-  type        = "list"
+  type        = list
 }
 
 variable "manager_systemd_units" {
   description = "List of systemd units to install on manager machines"
   default     = []
-  type        = "list"
+  type        = list
 }
 
 variable "worker_tags" {
   description = "List of DigitalOcean tag ids"
   default     = []
-  type        = "list"
+  type        = list
 }
 
 variable "worker_systemd_units" {
   description = "List of systemd units to install on worker machines"
   default     = []
-  type        = "list"
+  type        = list
 }
 
 variable "remote_api_ca" {
