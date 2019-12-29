@@ -6,7 +6,7 @@ data "ignition_systemd_unit" "rngd" {
 }
 
 locals {
-  systemd = [data.ignition_systemd_unit.rngd.id]
+  systemd = [data.ignition_systemd_unit.rngd.rendered]
 }
 
 # Ignition config (with services on start)

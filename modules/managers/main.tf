@@ -71,9 +71,9 @@ data "ignition_systemd_unit" "rngd" {
 
 locals {
   systemd = [
-    data.ignition_systemd_unit.docker_tls.id,
-    data.ignition_systemd_unit.docker_tls_socket.id,
-    data.ignition_systemd_unit.rngd.id,
+    data.ignition_systemd_unit.docker_tls.rendered,
+    data.ignition_systemd_unit.docker_tls_socket.rendered,
+    data.ignition_systemd_unit.rngd.rendered,
   ]
 }
 
@@ -82,9 +82,9 @@ data "ignition_config" "config" {
   systemd = concat(local.systemd, var.systemd_units)
 
   files = [
-    data.ignition_file.ca_cert.id,
-    data.ignition_file.server_cert.id,
-    data.ignition_file.server_key.id,
+    data.ignition_file.ca_cert.rendered,
+    data.ignition_file.server_cert.rendered,
+    data.ignition_file.server_key.rendered,
   ]
 }
 
