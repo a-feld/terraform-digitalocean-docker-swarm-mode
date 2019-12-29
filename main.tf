@@ -15,7 +15,6 @@ module "managers" {
   remote_api_certificate = var.remote_api_certificate
 
   ssh_keys           = var.ssh_keys
-  connection_timeout = var.connection_timeout
 
   systemd_units = var.manager_systemd_units
 }
@@ -36,7 +35,6 @@ module "workers" {
   join_token         = module.managers.worker_token
 
   ssh_keys           = var.ssh_keys
-  connection_timeout = var.connection_timeout
 
   systemd_units = var.worker_systemd_units
 }

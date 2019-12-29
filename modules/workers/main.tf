@@ -34,7 +34,6 @@ resource "digitalocean_droplet" "worker" {
   connection {
     type    = "ssh"
     user    = "core"
-    timeout = var.connection_timeout
     host    = self.ipv4_address
   }
 

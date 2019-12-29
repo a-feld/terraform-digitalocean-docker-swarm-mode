@@ -1,8 +1,3 @@
-variable "connection_timeout" {
-  description = "Timeout for connection to servers"
-  default     = "2m"
-}
-
 variable "domain" {
   description = "Domain name used in droplet hostnames, e.g example.com"
 }
